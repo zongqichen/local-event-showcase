@@ -1,41 +1,99 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ord-reference-app
+  name: spaceship-app
   namespace: default
   labels:
-    app: ord-reference-app
+    app.kubernetes.io/name: spaceship-app
+    app.kubernetes.io/part-of: a2a-ord-demo
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: ord-reference-app
+      app.kubernetes.io/name: spaceship-app
   template:
     metadata:
       labels:
-        app: ord-reference-app
+        app.kubernetes.io/name: spaceship-app
+        app.kubernetes.io/part-of: a2a-ord-demo
     spec:
       containers:
-        - name: ord-reference-app
-          image: ghcr.io/platform-mesh/poc-ord-reference-application:1.1.0
+        - name: spaceship-app
+          image: ghcr.io/open-resource-discovery/a2a-ord-demo/spaceship-app:latest
           ports:
-            - containerPort: 8083
+            - containerPort: 3000
+          env:
+            - name: PORT
+              value: "3000"
+            - name: SERVER_URL
+              value: "http://spaceship-app:3000"
           resources:
             requests:
               cpu: 50m
               memory: 64Mi
             limits:
-              cpu: 100m
-              memory: 128Mi
+              cpu: 200m
+              memory: 256Mi
           readinessProbe:
             httpGet:
-              path: /
-              port: 8083
+              path: /health
+              port: 3000
             initialDelaySeconds: 5
             periodSeconds: 10
           livenessProbe:
             httpGet:
-              path: /
-              port: 8083
+              path: /health
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 30
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: super-agent
+  namespace: default
+  labels:
+    app.kubernetes.io/name: super-agent
+    app.kubernetes.io/part-of: a2a-ord-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: super-agent
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: super-agent
+        app.kubernetes.io/part-of: a2a-ord-demo
+    spec:
+      containers:
+        - name: super-agent
+          image: ghcr.io/open-resource-discovery/a2a-ord-demo/super-agent:latest
+          ports:
+            - containerPort: 3000
+          env:
+            - name: PORT
+              value: "3000"
+            - name: SERVER_URL
+              value: "http://super-agent:3000"
+            - name: ORD_SOURCE_URL
+              value: "http://spaceship-app:3000"
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3000
             initialDelaySeconds: 10
             periodSeconds: 30
