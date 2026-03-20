@@ -1,0 +1,16 @@
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: a2a-ord-demo
+  namespace: default
+spec:
+  interval: 1m
+  sourceRef:
+    kind: GitRepository
+    name: local-event-showcase
+  path: ./demo/manifests/examples/kustomize/a2a-ord-demo
+  prune: true
+  kubeConfig:
+    secretRef:
+      name: my-cluster-kubeconfig
+      key: kubeconfig
