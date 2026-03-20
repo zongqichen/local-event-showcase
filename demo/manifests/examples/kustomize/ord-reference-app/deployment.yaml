@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ord-reference-app
+  namespace: default
+  labels:
+    app: ord-reference-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ord-reference-app
+  template:
+    metadata:
+      labels:
+        app: ord-reference-app
+    spec:
+      containers:
+        - name: ord-reference-app
+          image: ghcr.io/platform-mesh/poc-ord-reference-application:1.1.0
+          ports:
+            - containerPort: 8083
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 100m
+              memory: 128Mi
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8083
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8083
+            initialDelaySeconds: 10
+            periodSeconds: 30
