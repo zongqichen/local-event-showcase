@@ -26,6 +26,10 @@ spec:
           env:
             - name: PORT
               value: "3000"
+            # SERVER_URL is used in A2A agent cards and ORD documents as the
+            # externally reachable base URL. When accessing via port-forward,
+            # override to e.g. http://localhost:4001 so that A2A clients
+            # (like the A2A editor) can reach the agent endpoints directly.
             - name: SERVER_URL
               value: "http://spaceship-app:3000"
           resources:
@@ -76,8 +80,13 @@ spec:
           env:
             - name: PORT
               value: "3000"
+            # SERVER_URL — same as spaceship-app: set to the external address
+            # when using port-forward (e.g. http://localhost:4002)
             - name: SERVER_URL
               value: "http://super-agent:3000"
+            # ORD_SOURCE_URL — super-agent discovers spaceship-app's agents via
+            # ORD at this URL. Must be reachable from super-agent's perspective.
+            # In-cluster: use the Service DNS. Via port-forward: use localhost.
             - name: ORD_SOURCE_URL
               value: "http://spaceship-app:3000"
           resources:
