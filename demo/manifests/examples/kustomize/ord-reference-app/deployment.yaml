@@ -19,7 +19,8 @@ spec:
     spec:
       containers:
         - name: spaceship-app
-          image: ghcr.io/open-resource-discovery/a2a-ord-demo/spaceship-app:latest
+          image: a2a-spaceship-app:local
+          imagePullPolicy: Never
           ports:
             - containerPort: 3000
           env:
@@ -68,7 +69,8 @@ spec:
     spec:
       containers:
         - name: super-agent
-          image: ghcr.io/open-resource-discovery/a2a-ord-demo/super-agent:latest
+          image: a2a-super-agent:local
+          imagePullPolicy: Never
           ports:
             - containerPort: 3000
           env:
