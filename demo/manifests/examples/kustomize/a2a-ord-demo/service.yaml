@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: spaceship-app
+  namespace: default
+  labels:
+    app.kubernetes.io/name: spaceship-app
+    app.kubernetes.io/part-of: a2a-ord-demo
+spec:
+  selector:
+    app.kubernetes.io/name: spaceship-app
+  ports:
+    - port: 3000
+      targetPort: 3000
+      protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: super-agent
+  namespace: default
+  labels:
+    app.kubernetes.io/name: super-agent
+    app.kubernetes.io/part-of: a2a-ord-demo
+spec:
+  selector:
+    app.kubernetes.io/name: super-agent
+  ports:
+    - port: 3000
+      targetPort: 3000
+      protocol: TCP

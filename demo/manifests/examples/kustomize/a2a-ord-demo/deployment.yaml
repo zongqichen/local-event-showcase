@@ -1,0 +1,110 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spaceship-app
+  namespace: default
+  labels:
+    app.kubernetes.io/name: spaceship-app
+    app.kubernetes.io/part-of: a2a-ord-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: spaceship-app
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: spaceship-app
+        app.kubernetes.io/part-of: a2a-ord-demo
+    spec:
+      containers:
+        - name: spaceship-app
+          image: a2a-spaceship-app:local
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 3000
+          env:
+            - name: PORT
+              value: "3000"
+            # SERVER_URL is the externally reachable base URL advertised in
+            # A2A agent cards and ORD documents. When running in-cluster,
+            # use the Service DNS so that other pods (e.g. super-agent) can
+            # reach the A2A endpoints. When testing from a browser via
+            # port-forward, override with: kubectl set env deployment/spaceship-app SERVER_URL=http://localhost:<port>
+            - name: SERVER_URL
+              value: "http://spaceship-app:3000"
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 30
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: super-agent
+  namespace: default
+  labels:
+    app.kubernetes.io/name: super-agent
+    app.kubernetes.io/part-of: a2a-ord-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: super-agent
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: super-agent
+        app.kubernetes.io/part-of: a2a-ord-demo
+    spec:
+      containers:
+        - name: super-agent
+          image: a2a-super-agent:local
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 3000
+          env:
+            - name: PORT
+              value: "3000"
+            # SERVER_URL — same as spaceship-app above
+            - name: SERVER_URL
+              value: "http://super-agent:3000"
+            # ORD_SOURCE_URL — super-agent discovers spaceship-app's crew
+            # agents via ORD at this URL. Must be reachable from inside the
+            # cluster (pod-to-pod), so always use the Service DNS here.
+            - name: ORD_SOURCE_URL
+              value: "http://spaceship-app:3000"
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 30
