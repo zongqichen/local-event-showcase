@@ -60,6 +60,8 @@ graph TB
 > **Note:** The setup involves multiple kind clusters and local builds. See the upstream documentation for additional requirements:
 > - [Platform Mesh local setup](https://github.com/platform-mesh/helm-charts/tree/main/local-setup)
 > - [Gardener local setup](https://gardener.cloud/docs/gardener/deployment/getting_started_locally/)
+>
+> **Running on WSL2?** See the [WSL2 Setup Guide](docs/wsl2-setup.md) for detailed step-by-step instructions, explanations of every command, and the 6 automatic fixes applied by the scripts.
 
 ---
 
