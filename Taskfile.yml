@@ -6,7 +6,7 @@ vars:
   REG_NAME: kind-registry
   REG_PORT: "5002"
   LOCAL_OCI_REGISTRY: localhost:{{.REG_PORT}}
-  LOCAL_OCM_REPO: "https://{{.LOCAL_OCI_REGISTRY}}/ocm"
+  LOCAL_OCM_REPO: "http://{{.LOCAL_OCI_REGISTRY}}/ocm"
   TMP_DIR: .tmp
   OCM_CONFIG: "{{.TMP_DIR}}/ocm-config.yaml"
 
@@ -101,27 +101,22 @@ tasks:
       - test -z "${FORCE}" && test -f {{.TMP_DIR}}/certs/ca.crt && test -f {{.TMP_DIR}}/certs/registry.crt && test -f {{.TMP_DIR}}/ocm-config.yaml && test -f {{.TMP_DIR}}/containerd/certs.d/{{.REG_NAME}}:{{.REG_PORT}}/ca.crt
 
   local-registry:
-    desc: Spin up a local Docker registry with HTTPS in the kind network
-    deps:
-      - certs:generate
+    desc: Spin up a local Docker registry (HTTP) in the kind network
     cmds:
       - |
         if docker inspect {{.REG_NAME}} >/dev/null 2>&1; then
-          echo "Registry '{{.REG_NAME}}' already running, removing for HTTPS reconfigure..."
+          echo "Registry '{{.REG_NAME}}' already running, removing for reconfigure..."
           docker rm -f {{.REG_NAME}}
         fi
         docker run -d \
           --restart=always \
           -p "127.0.0.1:{{.REG_PORT}}:{{.REG_PORT}}" \
           -e REGISTRY_HTTP_ADDR=0.0.0.0:{{.REG_PORT}} \
-          -e REGISTRY_HTTP_TLS_CERTIFICATE=/certs/registry.crt \
-          -e REGISTRY_HTTP_TLS_KEY=/certs/registry.key \
-          -v "$(pwd)/{{.TMP_DIR}}/certs:/certs:ro" \
           -v registry-data:/var/lib/registry \
           --network kind \
           --name {{.REG_NAME}} \
           registry:2
-        echo "HTTPS registry '{{.REG_NAME}}' started on https://localhost:{{.REG_PORT}}"
+        echo "HTTP registry '{{.REG_NAME}}' started on http://localhost:{{.REG_PORT}}"
 
   local-registry:delete:
     desc: Delete the local Zot OCI registry and its data
@@ -165,8 +160,7 @@ tasks:
         helm pull crossplane-stable/crossplane --version {{.CROSSPLANE_VERSION}} --destination {{.TMP_DIR}}
       - |
         echo "Pushing Crossplane Helm chart to local registry..."
-        helm push {{.TMP_DIR}}/crossplane-{{.CROSSPLANE_VERSION}}.tgz oci://localhost:{{.REG_PORT}}/charts \
-          --ca-file {{.TMP_DIR}}/certs/ca.crt
+        helm push {{.TMP_DIR}}/crossplane-{{.CROSSPLANE_VERSION}}.tgz oci://localhost:{{.REG_PORT}}/charts
       - |
         echo "Copying Crossplane controller image to local registry..."
         docker pull docker.io/crossplane/crossplane:v{{.CROSSPLANE_VERSION}}
@@ -187,9 +181,8 @@ tasks:
       - mkdir -p {{.TMP_DIR}}/containerd/certs.d/{{.REG_NAME}}:{{.REG_PORT}}
       - |
         cat > {{.TMP_DIR}}/containerd/certs.d/{{.REG_NAME}}:{{.REG_PORT}}/hosts.toml <<EOF
-        [host."https://{{.REG_NAME}}:{{.REG_PORT}}"]
+        [host."http://{{.REG_NAME}}:{{.REG_PORT}}"]
           capabilities = ["pull", "resolve"]
-          ca = ["/etc/containerd/certs.d/{{.REG_NAME}}:{{.REG_PORT}}/ca.crt"]
         EOF
       - |
         cat > {{.TMP_DIR}}/kind-config.yaml <<EOF
@@ -472,7 +465,12 @@ tasks:
           git clone https://github.com/platform-mesh/helm-charts.git demo/external/platform-mesh/helm-charts
           cd demo/external/platform-mesh/helm-charts && git checkout feat/local-event-showcase
         fi
-      - task --dir demo/external/platform-mesh/helm-charts local-setup:cached:showcase
+      - |
+        # WSL2: ensure wsl.exe is in PATH (needed by platform-mesh scripts)
+        if grep -qi microsoft /proc/version 2>/dev/null; then
+          [[ ":$PATH:" != *":/mnt/c/Windows/System32:"* ]] && export PATH="$PATH:/mnt/c/Windows/System32"
+        fi
+        task --dir demo/external/platform-mesh/helm-charts local-setup:cached:showcase
 
   platform-mesh:local:iterate:
     desc: Checkout platform-mesh helm-charts and run local-setup:cached:showcase:iterate
@@ -486,4 +484,9 @@ tasks:
           git clone https://github.com/platform-mesh/helm-charts.git demo/external/platform-mesh/helm-charts
           cd demo/external/platform-mesh/helm-charts && git checkout feat/local-event-showcase
         fi
-      - task --dir demo/external/platform-mesh/helm-charts local-setup:cached:showcase:iterate
+      - |
+        # WSL2: ensure wsl.exe is in PATH (needed by platform-mesh scripts)
+        if grep -qi microsoft /proc/version 2>/dev/null; then
+          [[ ":$PATH:" != *":/mnt/c/Windows/System32:"* ]] && export PATH="$PATH:/mnt/c/Windows/System32"
+        fi
+        task --dir demo/external/platform-mesh/helm-charts local-setup:cached:showcase:iterate

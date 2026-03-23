@@ -1,6 +1,11 @@
 #!/bin/bash
 set -euo pipefail
 
+# WSL2: ensure wsl.exe is in PATH (needed by platform-mesh scripts)
+if grep -qi microsoft /proc/version 2>/dev/null; then
+    [[ ":$PATH:" != *":/mnt/c/Windows/System32:"* ]] && export PATH="$PATH:/mnt/c/Windows/System32"
+fi
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 HACK_DIR="${SCRIPT_DIR}"
 PROJECT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
@@ -361,7 +366,6 @@ log "Deploying openmcp-init-operator to ${ONBOARDING_CLUSTER}..."
 helm upgrade --install openmcp-init-operator "${OPERATOR_DIR}/chart" \
     --kubeconfig="${ONBOARDING_KUBECONFIG}" \
     --namespace="${OPERATOR_NAMESPACE}" \
-    --force-conflicts \
     --set image.name="${OPERATOR_IMAGE%:*}" \
     --set image.tag="${OPERATOR_IMAGE#*:}" \
     --set image.imagePullSecret="" \
@@ -430,7 +434,6 @@ if [[ -n "${GARDENER_CLUSTER}" ]]; then
     helm upgrade --install gardener-init-operator "${GARDENER_OPERATOR_DIR}/chart" \
         --kubeconfig="${GARDENER_RAW_KUBECONFIG}" \
         --namespace="${OPERATOR_NAMESPACE}" \
-        --force-conflicts \
         --set image.name="${GARDENER_OPERATOR_IMAGE%:*}" \
         --set image.tag="${GARDENER_OPERATOR_IMAGE#*:}" \
         --set image.imagePullSecret="" \
@@ -469,7 +472,6 @@ log "Deploying openmcp-onboarding-ui to platform-mesh..."
 helm upgrade --install openmcp-onboarding-ui "${ONBOARDING_UI_DIR}/chart" \
     --kubeconfig="${PLATFORM_MESH_KUBECONFIG}" \
     --namespace="platform-mesh-system" \
-    --force-conflicts \
     --set image.name="${ONBOARDING_UI_IMAGE%:*}" \
     --set image.tag="${ONBOARDING_UI_IMAGE#*:}" \
     --set image.pullPolicy="Never"
